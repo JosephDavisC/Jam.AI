@@ -15,7 +15,7 @@ const loadDataFromLocalstorage = () => {
     themeButton.innerText = document.body.classList.contains("light-mode") ? "dark_mode" : "light_mode";
 
     const defaultText = `<div class="default-text">
-                            <h1><img src = "images/Logo.PNG"
+                            <h1><img src = "images/Logo.png"
                                     width = "400"
                                     height = "200"></img></h1>
                             <p>Welcome to Jam.AI, your personal health assistant for managing diabetes. <br>
