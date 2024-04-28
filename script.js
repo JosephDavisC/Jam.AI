@@ -5,7 +5,7 @@ const themeButton = document.querySelector("#theme-btn");
 const deleteButton = document.querySelector("#delete-btn");
 
 let userText = null;
-const API_KEY = "sk-proj-cKJznhzOMZ46OI0GOc78T3BlbkFJmB5IinN4fXL1AD6rHlnx"; // Paste your API key here
+const API_KEY = "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"; // Paste your API key here
 
 const loadDataFromLocalstorage = () => {
     // Load saved chats and theme from local storage and apply/add on the page
@@ -39,8 +39,8 @@ const createChatElement = (content, className) => {
 }
 
 
-   const getChatResponse = async (incomingChatDiv) => {
-    const API_URL = "https://api.openai.com/v1/completions";
+const getChatResponse = async (incomingChatDiv) => {
+    const API_URL = "https://api.openai.com/v1/chat/completions"; // Update endpoint
     const pElement = document.createElement("p");
 
     // Define the properties and data for the API request
@@ -51,11 +51,10 @@ const createChatElement = (content, className) => {
             "Authorization": `Bearer ${API_KEY}`
         },
         body: JSON.stringify({
-            model: "text-davinci-003",
-            prompt: userText,
+            model: "gpt-3.5-turbo",
+            messages: [{ role: "user", content: userText }],
             max_tokens: 2048,
             temperature: 0.2,
-            n: 1,
             stop: null
         })
     }
@@ -65,7 +64,7 @@ const createChatElement = (content, className) => {
         const response = await fetch(API_URL, requestOptions);
         const data = await response.json();
         console.log(data); // Logging the API response to the console
-        pElement.textContent = data.choices[0].text.trim();
+        pElement.textContent = data.choices[0].message.content.trim();
     } catch (error) { // Add error class to the paragraph element and set error text
         pElement.classList.add("error");
         pElement.textContent = "Oops! Something went wrong while retrieving the response. Please try again.";
@@ -77,6 +76,7 @@ const createChatElement = (content, className) => {
     localStorage.setItem("all-chats", chatContainer.innerHTML);
     chatContainer.scrollTo(0, chatContainer.scrollHeight);
 }
+
 
 
 const copyResponse = (copyBtn) => {
