@@ -5,70 +5,34 @@ const themeButton = document.querySelector("#theme-btn");
 const deleteButton = document.querySelector("#delete-btn");
 
 let userText = null;
-const API_KEY = "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"; // Paste your API key here
-
-const loadDataFromLocalstorage = () => {
-    // Load saved chats and theme from local storage and apply/add on the page
-    const themeColor = localStorage.getItem("themeColor");
-
-    document.body.classList.toggle("light-mode", themeColor === "light_mode");
-    themeButton.innerText = document.body.classList.contains("light-mode") ? "dark_mode" : "light_mode";
-
-    const defaultText = `<div class="default-text">
-                            <h1><img src = "images/Logo.png"
-                                    width = "400"
-                                    height = "200"></img></h1>
-                            <p>Welcome to Jam.AI, your personal health assistant for managing diabetes. <br>
-                            <br>Before we get started, I need the following information.
-                            <br> Please enter your age, weight, height, and blood level <br>
-                            <br>Your chat history will be displayed here.
-
-                            </p>
-                        </div>`
-
-    chatContainer.innerHTML = localStorage.getItem("all-chats") || defaultText;
-    chatContainer.scrollTo(0, chatContainer.scrollHeight); // Scroll to bottom of the chat container
-}
-
-const createChatElement = (content, className) => {
-    // Create new div and apply chat, specified class and set html content of div
-    const chatDiv = document.createElement("div");
-    chatDiv.classList.add("chat", className);
-    chatDiv.innerHTML = content;
-    return chatDiv; // Return the created chat div
-}
-
+const API_URL = "/get_api_data"; // Update: Point to your Flask route
 
 const getChatResponse = async (incomingChatDiv) => {
-    const API_URL = "https://api.openai.com/v1/chat/completions"; // Update endpoint
+    const API_URL = "/get_api_data"; // Update endpoint
     const pElement = document.createElement("p");
 
-    // Define the properties and data for the API request
     const requestOptions = {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${API_KEY}`
-        },
-        body: JSON.stringify({
-            model: "gpt-3.5-turbo",
-            messages: [{ role: "user", content: userText }],
-            max_tokens: 2048,
-            temperature: 0.2,
-            stop: null
-        })
-    }
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({message: userText})
+    };
 
-    // Send POST request to API, get response and set the response as paragraph element text
     try {
         const response = await fetch(API_URL, requestOptions);
         const data = await response.json();
-        console.log(data); // Logging the API response to the console
-        pElement.textContent = data.choices[0].message.content.trim();
-    } catch (error) { // Add error class to the paragraph element and set error text
-        pElement.classList.add("error");
-        pElement.textContent = "Oops! Something went wrong while retrieving the response. Please try again.";
+
+        if (data.error) { // Check for errors from your backend
+            pElement.classList.add("error");
+            pElement.textContent = data.error;
+        } else {
+            pElement.textContent = data.choices[0].message.content.trim();
+        }
+
+    } catch (error) {
+        console.error("Error fetching response:", error);
+        // ... (handle errors)
     }
+
 
     // Remove the typing animation, append the paragraph element and save the chats to local storage
     incomingChatDiv.querySelector(".typing-animation").remove();
@@ -78,11 +42,10 @@ const getChatResponse = async (incomingChatDiv) => {
 }
 
 
-
 const copyResponse = (copyBtn) => {
     // Copy the text content of the response to the clipboard
-    const reponseTextElement = copyBtn.parentElement.querySelector("p");
-    navigator.clipboard.writeText(reponseTextElement.textContent);
+    const responseTextElement = copyBtn.parentElement.querySelector("p");
+    navigator.clipboard.writeText(responseTextElement.textContent);
     copyBtn.textContent = "done";
     setTimeout(() => copyBtn.textContent = "content_copy", 1000);
 }
@@ -91,7 +54,7 @@ const showTypingAnimation = () => {
     // Display the typing animation and call the getChatResponse function
     const html = `<div class="chat-content">
                     <div class="chat-details">
-                        <img src="images/jam.png" alt="jam-img">
+                        <img src="${BASE_STATIC_URL}images/jam.png" alt="jam-img"/>
                         <div class="typing-animation">
                             <div class="typing-dot" style="--delay: 0.2s"></div>
                             <div class="typing-dot" style="--delay: 0.3s"></div>
@@ -105,6 +68,37 @@ const showTypingAnimation = () => {
     chatContainer.appendChild(incomingChatDiv);
     chatContainer.scrollTo(0, chatContainer.scrollHeight);
     getChatResponse(incomingChatDiv);
+}
+
+const loadDataFromLocalstorage = () => {
+    // Load saved chats and theme from local storage and apply/add on the page
+    const themeColor = localStorage.getItem("themeColor");
+
+    document.body.classList.toggle("light-mode", themeColor === "light_mode");
+    themeButton.innerText = document.body.classList.contains("light-mode") ? "dark_mode" : "light_mode";
+
+    const defaultText = `<div class="default-text">
+                         <h1><img src="${BASE_STATIC_URL}images/Logo.png"
+                                 width="400"
+                                 height="200"></img></h1>
+                         <p>Welcome to Jam.AI, your personal health assistant for managing diabetes. <br>
+                         <br>Before we get started, I need the following information.
+                         <br> Please enter your age, weight, height, and blood level <br>
+                         <br>Your chat history will be displayed here.
+                         </p>
+                     </div>`
+
+
+    chatContainer.innerHTML = localStorage.getItem("all-chats") || defaultText;
+    chatContainer.scrollTo(0, chatContainer.scrollHeight); // Scroll to bottom of the chat container
+}
+
+const createChatElement = (content, className) => {
+    // Create new div and apply chat, specified class and set html content of div
+    const chatDiv = document.createElement("div");
+    chatDiv.classList.add("chat", className);
+    chatDiv.innerHTML = content;
+    return chatDiv; // Return the created chat div
 }
 
 const handleOutgoingChat = () => {
@@ -134,7 +128,7 @@ const handleOutgoingChat = () => {
 
 deleteButton.addEventListener("click", () => {
     // Remove the chats from local storage and call loadDataFromLocalstorage function
-    if(confirm("Are you sure you want to delete all the chats?")) {
+    if (confirm("Are you sure you want to delete all the chats?")) {
         localStorage.removeItem("all-chats");
         loadDataFromLocalstorage();
     }
@@ -149,9 +143,9 @@ themeButton.addEventListener("click", () => {
 
 const initialInputHeight = chatInput.scrollHeight;
 
-chatInput.addEventListener("input", () => {   
+chatInput.addEventListener("input", () => {
     // Adjust the height of the input field dynamically based on its content
-    chatInput.style.height =  `${initialInputHeight}px`;
+    chatInput.style.height = `${initialInputHeight}px`;
     chatInput.style.height = `${chatInput.scrollHeight}px`;
 });
 
@@ -163,6 +157,7 @@ chatInput.addEventListener("keydown", (e) => {
         handleOutgoingChat();
     }
 });
+
 
 loadDataFromLocalstorage();
 sendButton.addEventListener("click", handleOutgoingChat);
